@@ -2,7 +2,7 @@
 
 ## Introduction
 This guide provides a step-by-step process for setting up a **Kubernetes High Availability (HA) Cluster** using the **Stacked etcd topology**. In this topology, the `etcd` database runs on the same nodes as the control plane, reducing network overhead and simplifying the setup. We will configure both **master and worker nodes**, set up a **container runtime (containerd)**, and deploy the **Kubernetes control plane** using `kubeadm`. For networking, we will use **Calico**.
-<img src="![image](https://github.com/user-attachments/assets/9b480f2e-9bf3-43c2-be4c-5405e840e360)
+<img src="https://github.com/user-attachments/assets/9b480f2e-9bf3-43c2-be4c-5405e840e360
 " width="800">
 
 
