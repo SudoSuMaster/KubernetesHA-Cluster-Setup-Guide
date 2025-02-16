@@ -99,13 +99,14 @@ sudo mkdir -p /etc/containerd
 sudo containerd config default | sudo tee /etc/containerd/config.toml
 sudo vi /etc/containerd/config.toml
 ```
-Modify the following line:
+Modify the following line from false to true:
+
+![image](https://github.com/user-attachments/assets/b79fbae1-8201-4b8b-b739-fe0a6f742a00)
+
 ```ini
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
 SystemdCgroup = true
 ```
-
-![image](https://github.com/user-attachments/assets/b79fbae1-8201-4b8b-b739-fe0a6f742a00)
 
 Restart and enable containerd:
 ```sh
