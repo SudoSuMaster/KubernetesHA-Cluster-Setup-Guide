@@ -7,7 +7,7 @@ Overview:
 
 ![image](https://github.com/user-attachments/assets/cd8de135-0012-45bf-b5fb-5ab59eef7530)
 
-
+More info read k8s docs: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/ha-topology/
 
 ## Prerequisites
 Before we begin, ensure that you meet the following requirements:
