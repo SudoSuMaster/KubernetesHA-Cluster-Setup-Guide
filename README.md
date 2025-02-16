@@ -190,5 +190,5 @@ kubectl get nodes
 ```
 If any nodes are **NotReady**, restart the `kubelet` service and check your networking setup.
 
-### 🎉 Congratulations! Your Kubernetes cluster is now operational and highly available. 🚀
+### 🎉 Congratulations! Your Kubernetes cluster is now operational and highly available. Sudo Su Masterrr 🚀
 
