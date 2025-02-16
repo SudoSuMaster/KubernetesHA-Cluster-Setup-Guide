@@ -104,6 +104,9 @@ Modify the following line:
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
 SystemdCgroup = true
 ```
+
+![image](https://github.com/user-attachments/assets/b79fbae1-8201-4b8b-b739-fe0a6f742a00)
+
 Restart and enable containerd:
 ```sh
 sudo systemctl restart containerd
