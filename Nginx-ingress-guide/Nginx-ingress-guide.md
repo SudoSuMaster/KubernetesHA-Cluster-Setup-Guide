@@ -81,4 +81,5 @@ kubectl get svc
    ```
 
 ✅ **Yippie** 
+![image](https://github.com/user-attachments/assets/a48acc6a-1efd-4021-821e-d80c4d1612fb)
 
