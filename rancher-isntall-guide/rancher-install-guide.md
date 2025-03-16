@@ -91,11 +91,19 @@ kubectl get ingress -n cattle-system
 
 ### 6. Wijzig de service type naar NodePort
 ```bash
-kubectl patch svc my-ingress-ingress-nginx-controller -n ingress-nginx -p '{"spec": {"type": "NodePort"}}'
+kubectl patch svc rancher -n cattle-system -p '{"spec": {"type": "NodePort"}}'
 ```
 
 ## Toegang tot Rancher
 - Gebruik de opgegeven hostname (zoals `rancher.my.org` of `rancher.local`) om toegang te krijgen tot de Rancher UI.
+### 7. find port
+```bash
+kubectl get svc -n cattle-system
+
+kubectl get nodes -o wide
+```
+
+### 8. Acces with http://<node-ip>:<node-port> example: http://192.168.1.100:31000
 
 ## Opmerkingen
 - Zorg ervoor dat de DNS correct geconfigureerd is voor de gebruikte hostname.
