@@ -51,6 +51,64 @@ kubectl -n cattle-system rollout status deploy/rancher
 kubectl -n cattle-system get deploy rancher
 ```
 
+
+✅ Toevoegen van TLS Certificaat via cert-manager
+Je kunt een self-signed certificaat gebruiken voor ontwikkelomgevingen, of een Let's Encrypt certificaat voor productie.
+
+3.1 Voeg een ClusterIssuer toe (SelfSigned voorbeeld)
+Maak een bestand selfsigned-clusterissuer.yaml aan:
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-clusterissuer
+spec:
+  selfSigned: {}
+```
+
+```bash
+kubectl apply -f selfsigned-clusterissuer.yaml
+```
+
+ (Aangepast): Ingress inclusief TLS-certificaat
+Pas je rancher-ingress.yaml aan zodat het certificaat automatisch wordt aangemaakt:
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rancher
+  namespace: cattle-system
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: selfsigned-clusterissuer
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: rancher.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rancher
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - rancher.local
+    secretName: rancher-tls
+```
+```bash
+kubectl get certificate -n cattle-system
+kubectl describe certificate rancher-tls -n cattle-system
+kubectl get secret rancher-tls -n cattle-system
+```
+
+
+
+
+
 ### 5. Maak een Ingress voor Rancher aan
 Maak een bestand genaamd `rancher-ingress.yaml` met de volgende inhoud:
 ```yaml
