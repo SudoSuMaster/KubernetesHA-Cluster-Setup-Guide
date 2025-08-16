@@ -1,173 +1,54 @@
 # Rancher Installatie Handleiding
 
-Deze handleiding beschrijft hoe je Rancher installeert op een Kubernetes-cluster met behulp van Helm en cert-manager.
-
+Deze handleiding beschrijft hoe je Rancher installeert op een Kubernetes-cluster met behulp van Helm 
 ## Vereisten
 - Een werkend Kubernetes-cluster
-- Helm geïnstalleerd
+- Helm geïnstalleerd https://helm.sh/docs/intro/install/
 - Kubectl geconfigureerd voor het cluster
 
 ## Stappen
 
-### 1. Voeg de Rancher Helm Repository toe
+### Step 1. Voeg de Rancher Helm Repository toe
 ```bash
 helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+helm repo update
 ```
 
-### 2. Maak de namespace voor Rancher aan
+### Step 2. Maak de namespace voor Rancher aan
 ```bash
 kubectl create namespace cattle-system
 ```
 
-### 3. Installeer cert-manager
-```bash
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.crds.yaml
-
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
-
-helm install cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --version v1.13.2
-```
-
-Controleer of de pods draaien:
-```bash
-kubectl get pods --namespace cert-manager
-```
-
-### 4. Installeer Rancher
+### Step 3. Installeer rancher
 ```bash
 helm install rancher rancher-latest/rancher \
   --namespace cattle-system \
-  --set hostname=rancher.my.org \
+  --set replicas=1 \
+  --set ingress.enabled=false \
   --set bootstrapPassword=admin
 ```
 
-Controleer de status van de deployment:
-```bash
-kubectl -n cattle-system rollout status deploy/rancher
-kubectl -n cattle-system get deploy rancher
-```
-
-
-✅ Toevoegen van TLS Certificaat via cert-manager
-Je kunt een self-signed certificaat gebruiken voor ontwikkelomgevingen, of een Let's Encrypt certificaat voor productie.
-
-3.1 Voeg een ClusterIssuer toe (SelfSigned voorbeeld)
-Maak een bestand selfsigned-clusterissuer.yaml aan:
-```yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: selfsigned-clusterissuer
-spec:
-  selfSigned: {}
-```
-
-```bash
-kubectl apply -f selfsigned-clusterissuer.yaml
-```
-
- (Aangepast): Ingress inclusief TLS-certificaat
-Pas je rancher-ingress.yaml aan zodat het certificaat automatisch wordt aangemaakt:
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: rancher
-  namespace: cattle-system
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: selfsigned-clusterissuer
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: rancher.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: rancher
-            port:
-              number: 80
-  tls:
-  - hosts:
-    - rancher.local
-    secretName: rancher-tls
-```
-```bash
-kubectl get certificate -n cattle-system
-kubectl describe certificate rancher-tls -n cattle-system
-kubectl get secret rancher-tls -n cattle-system
-```
-
-
-
-
-
-### 5. Maak een Ingress voor Rancher aan
-Maak een bestand genaamd `rancher-ingress.yaml` met de volgende inhoud:
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: rancher
-  namespace: cattle-system
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: rancher.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: rancher
-            port:
-              number: 443
-  tls:
-  - hosts:
-    - rancher.local
-```
-
-Pas de ingress toe:
-```bash
-kubectl apply -f rancher-ingress.yaml
-```
-
-Controleer of de ingress correct is aangemaakt:
-```bash
-kubectl get ingress -n cattle-system
-```
-
-### 6. Wijzig de service type naar NodePort
-```bash
-kubectl patch svc rancher -n cattle-system -p '{"spec": {"type": "NodePort"}}'
-```
-
-## Toegang tot Rancher
-- Gebruik de opgegeven hostname (zoals `rancher.my.org` of `rancher.local`) om toegang te krijgen tot de Rancher UI.
-### 7. find port
+### Step 4: Check Rancher Service
 ```bash
 kubectl get svc -n cattle-system
-
-kubectl get nodes -o wide
 ```
 
-### 8. Acces with http://<node-ip>:<node-port> example: http://192.168.1.100:31000
+### Step 5: Convert Rancher Service to NodePort
+```bash
+kubectl patch svc rancher -n cattle-system -p '{"spec": {"type": "NodePort"}}'
+kubectl get svc -n cattle-system
 
-## Opmerkingen
-- Zorg ervoor dat de DNS correct geconfigureerd is voor de gebruikte hostname.
-- Voor productieomgevingen wordt het aangeraden om een geldig SSL-certificaat te gebruiken.
+```
 
----
+### Step 6. Toegang tot Rancher in de browser
 
-Veel succes met het installeren van Rancher!
+Open: https://<LB_IP>:<HTTPS_NODEPORT>
+Voorbeeld: https://192.168.2.21:32542
+Let op: de browser kan een waarschuwing geven over een self-signed certificaat.
+
+Step 7. Haal het bootstrap-wachtwoord op
+
+```bash
+kubectl get secret --namespace cattle-system bootstrap-secret -o go-template='{{.data.bootstrapPassword|base64decode}}{{ "\n" }}'
+```
 
