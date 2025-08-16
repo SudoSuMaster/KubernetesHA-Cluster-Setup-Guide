@@ -1,26 +1,35 @@
-# Kubernetes High Availability (HA) Cluster Setup Guide
+# 🚀 Kubernetes High Availability (HA) Cluster Setup Guide
 
-## Introduction
-This guide provides a step-by-step process for setting up a **Kubernetes High Availability (HA) Cluster** using the **Stacked etcd topology**. In this topology, the `etcd` database runs on the same nodes as the control plane, reducing network overhead and simplifying the setup. We will configure both **master and worker nodes**, set up a **container runtime (containerd)**, and deploy the **Kubernetes control plane** using `kubeadm`. For networking, we will use **Calico**.
+## 📖 Introduction
+This guide walks you through setting up a **Kubernetes High Availability (HA) Cluster** using the **Stacked etcd topology**.
 
-Overview:
+In this setup:
+- `etcd` runs alongside the control plane nodes (masters), reducing network overhead and simplifying deployment.
+- We'll configure **control plane nodes** and **worker nodes**, set up the **container runtime (containerd)**, and deploy Kubernetes using `kubeadm`.
+- For networking, we'll use **Calico**.
 
-![image](https://github.com/user-attachments/assets/cd8de135-0012-45bf-b5fb-5ab59eef7530)
+### Architecture Overview
+![Kubernetes HA Cluster](https://github.com/user-attachments/assets/cd8de135-0012-45bf-b5fb-5ab59eef7530)
 
-More info read k8s docs: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/ha-topology/
+More details: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/ha-topology/
 
-## Prerequisites
-Before we begin, ensure that you meet the following requirements:
+---
 
-- **Minimum of 3 Master nodes** (for HA)
-- **At least 2 Worker nodes**
+## ✅ Prerequisites
+Ensure the following before starting:
+
+- **3+ Control Plane (Master) nodes**
+- **2+ Worker nodes**
 - **A Load Balancer** (e.g., HAProxy) for distributing traffic to API servers
-- **Ubuntu 22.04+ installed** on all nodes
-- **Root or sudo privileges** on all nodes
+- **Ubuntu 22.04+** on all nodes
+- **Root or sudo privileges**
 - **Network connectivity** between all nodes
 
-## Step 1: Load Balancer Setup (HAProxy)
-We will use **HAProxy** to distribute API requests across multiple master nodes.
+---
+
+## ⚙️ Step 1: Setup Load Balancer (HAProxy)
+
+Install and configure HAProxy to distribute API requests across masters.
 
 ### Install HAProxy
 ```sh
@@ -28,11 +37,12 @@ sudo apt update && sudo apt install -y haproxy
 ```
 
 ### Configure HAProxy
-Edit the configuration file:
+Edit the config:
 ```sh
 sudo vim /etc/haproxy/haproxy.cfg
 ```
-Add the following content:
+
+Add:
 ```ini
 frontend kubernetes-frontend
     bind 192.168.2.10:6443
@@ -48,17 +58,21 @@ backend kubernetes-backend
     server master-2 192.168.2.12:6443 check
     server master-3 192.168.2.13:6443 check
 ```
-Restart HAProxy:
+
+Restart and enable HAProxy:
 ```sh
 sudo systemctl restart haproxy
 sudo systemctl enable haproxy
 ```
-Verify HAProxy is running:
+
+Verify:
 ```sh
 nc 192.168.2.10 6443 -v
 ```
 
-## Step 2: Disable Swap and Configure Kernel Modules
+---
+
+## ⚙️ Step 2: Prepare All Nodes (except Load Balancer)
 
 ### Disable Swap
 ```sh
@@ -66,7 +80,7 @@ sudo swapoff -a
 sudo sed -i '/swap/d' /etc/fstab
 ```
 
-### Enable Kernel Modules for Kubernetes
+### Configure Kernel Parameters
 ```sh
 cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
 net.bridge.bridge-nf-call-iptables  = 1
@@ -80,115 +94,130 @@ sudo sysctl --system
 ```sh
 sudo modprobe overlay
 sudo modprobe br_netfilter
+
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
 overlay
 br_netfilter
 EOF
 ```
 
-## Step 3: Install Container Runtime (containerd)
+---
+
+## ⚙️ Step 3: Add Kubernetes Repository
+```sh
+sudo mkdir -p -m 755 /etc/apt/keyrings
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key   | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /"   | sudo tee /etc/apt/sources.list.d/kubernetes.list
+```
+
+---
+
+## ⚙️ Step 4: Install Kubernetes Components
 ```sh
 sudo apt-get update
-sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+```
+
+---
+
+## ⚙️ Step 5: Install & Configure Container Runtime (containerd)
+```sh
 sudo apt-get install -y containerd
-```
-
-### Configure containerd
-```sh
 sudo mkdir -p /etc/containerd
-sudo containerd config default | sudo tee /etc/containerd/config.toml
-sudo vi /etc/containerd/config.toml
-```
-Modify the following line from false to true:
 
-![image](https://github.com/user-attachments/assets/b79fbae1-8201-4b8b-b739-fe0a6f742a00)
+containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
+sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
 
-```ini
-[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
-SystemdCgroup = true
-```
-
-Restart and enable containerd:
-```sh
 sudo systemctl restart containerd
 sudo systemctl enable containerd
 ```
 
-## Step 4: Install Kubernetes Components
+Enable kubelet:
 ```sh
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo tee /etc/apt/trusted.gpg.d/kubernetes.asc
-echo "deb https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-sudo apt update
-sudo apt install -y kubelet kubeadm kubectl
 sudo systemctl enable kubelet
 ```
 
-## Step 5: Initialize Kubernetes Control Plane
-Run the following command on the **primary master node**:
-```sh
-sudo kubeadm init --control-plane-endpoint "192.168.2.10:6443" --upload-certs --pod-network-cidr=192.168.0.0/16
-```
-After successful initialization, save the **join command** that kubeadm outputs.
+---
 
-### Configure kubectl for the Primary Master Node
+## ⚙️ Step 6: Initialize Kubernetes Control Plane
+
+Run this **on one control plane node**:
+```sh
+sudo kubeadm init   --control-plane-endpoint "192.168.2.10:6443"   --upload-certs   --pod-network-cidr=10.244.0.0/16
+```
+
+Save the **join command** from the output.
+
+---
+
+## ⚙️ Step 7: Configure kubectl on Primary Master
 ```sh
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
-## Step 6: Join Additional Masters and Workers
+---
 
-### Join Additional Master Nodes
-Run the following command on each **additional master** node:
+## ⚙️ Step 8: Join Additional Nodes
+
+### Additional Masters
 ```sh
-kubeadm join 192.168.2.10:6443 --token <token> \
-    --discovery-token-ca-cert-hash sha256:<hash> \
-    --control-plane --certificate-key <cert-key>
+kubeadm join 192.168.2.10:6443 --token <token>   --discovery-token-ca-cert-hash sha256:<hash>   --control-plane --certificate-key <cert-key>
 ```
 
-### Join Worker Nodes
-Run the following command on each **worker node**:
+### Worker Nodes
 ```sh
-kubeadm join 192.168.2.10:6443 --token <token> \
-    --discovery-token-ca-cert-hash sha256:<hash>
+kubeadm join 192.168.2.10:6443 --token <token>   --discovery-token-ca-cert-hash sha256:<hash>
 ```
 
-## Step 7: Deploy Network Plugin (Calico)
+---
+
+## ⚙️ Step 9: Deploy Network Plugin (Calico)
+
+Run on any control plane node:
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
 ```
-Verify nodes are ready:
+
+Check status:
 ```sh
 kubectl get nodes
 ```
-If needed, restart kubelet:
+
+If any node is `NotReady`, restart kubelet:
 ```sh
 sudo systemctl restart kubelet
 ```
 
-## Step 8: Verify ETCD Cluster
+---
+
+## ⚙️ Step 10: Verify ETCD Cluster
 
 ### Install etcd client
 ```sh
-apt update && apt install -y etcd-client
+sudo apt update && sudo apt install -y etcd-client
 ```
 
-### Check the ETCD Members
+### Check members
 ```sh
-ETCDCTL_API=3 etcdctl member list \
-  --endpoints=https://127.0.0.1:2379 \
-  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
-  --cert=/etc/kubernetes/pki/etcd/server.crt \
-  --key=/etc/kubernetes/pki/etcd/server.key
+ETCDCTL_API=3 etcdctl member list   --endpoints=https://127.0.0.1:2379   --cacert=/etc/kubernetes/pki/etcd/ca.crt   --cert=/etc/kubernetes/pki/etcd/server.crt   --key=/etc/kubernetes/pki/etcd/server.key
 ```
 
-## Conclusion
-Your **Kubernetes HA cluster** is now set up with multiple master and worker nodes using `kubeadm`, `containerd`, and `Calico`. Verify that all nodes are in a `Ready` state using:
+---
+
+## 🎉 Conclusion
+
+You now have a **Highly Available Kubernetes Cluster** with multiple control plane and worker nodes running on `containerd` with **Calico networking**.
+
+Check node status:
 ```sh
 kubectl get nodes
 ```
-If any nodes are **NotReady**, restart the `kubelet` service and check your networking setup.
 
-### 🎉 Congratulations! Your Kubernetes cluster is now operational and highly available. Sudo Su Masterrr 🚀
+If any node is stuck in `NotReady`, restart kubelet and check networking.
 
+✨ Congratulations! Your Kubernetes HA cluster is live and production-ready 🚀
