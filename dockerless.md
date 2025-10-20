@@ -61,12 +61,12 @@ docker pull nginx:alpine
 docker run -d -p 8080:80 --name mijnsite nginx:alpine
 
 Open je browser en ga naar: http://localhost:8080
-
+```
 Stoppen:
 
 docker stop mijnsite
 docker rm mijnsite
-```
+
 
 ---
 
