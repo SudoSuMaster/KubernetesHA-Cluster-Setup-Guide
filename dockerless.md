@@ -73,7 +73,7 @@ docker rm mijnsite
 🏗️ Zelf een Image Bouwen
 
 Maak een map, bijvoorbeeld mijn-website/, met deze bestanden:
-
+```html
 index.html
 
 <!doctype html>
@@ -81,7 +81,9 @@ index.html
   <head><meta charset="utf-8"><title>Hallo Docker</title></head>
   <body><h1>Werkt!</h1><p>Mijn eerste Docker image 🎉</p></body>
 </html>
+```
 
+```bash
 Dockerfile
 
 # Gebruik een kleine webserver image
@@ -97,7 +99,7 @@ docker run -d -p 8080:80 --name site mijn-website:1.0
 
 Check in je browser: http://localhost:8080
 
-
+```
 ---
 
 ⚠️ Veelgemaakte Fouten
