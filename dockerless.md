@@ -1,63 +1,78 @@
-1) Wat is Docker (heel kort)
+---
 
-Image = het “recept” (software + instellingen).
+# 🐳 Docker Images Guide (voor MBO-1 studenten)
 
-Container = het “gerecht” dat draait op jouw laptop/server, gemaakt van een image.
+Een super simpele uitleg over **Docker**, **images** en **containers** — met voorbeelden die je direct kunt proberen.  
+Ideaal voor de eerste kennismaking met containertechnologie. 🚀
 
+---
 
-2) Installeren & checken
+## 📘 Wat is Docker?
 
-1. Installeer Docker Desktop (Windows/Mac) of Docker Engine (Linux).
+- **Image** → het “recept” (software + instellingen).  
+- **Container** → het “gerecht” dat draait op jouw laptop, gemaakt van een image.
 
+Docker maakt het makkelijk om software overal op dezelfde manier te draaien.
 
-2. Test in je terminal/PowerShell:
+---
 
+## ⚙️ Installatie & Controle
 
+1. Installeer **Docker Desktop** (Windows/Mac) of **Docker Engine** (Linux).  
+2. Test of alles werkt:
 
+```bash
 docker --version
+```
 
-3) Eerste test: hello-world
+---
 
+👋 Eerste Test
+```bash
 docker run hello-world
-
-Docker downloadt de image en start een container.
-
-Klaar? Je ziet een korte uitleg in de terminal.
+```
+✅ Docker downloadt de image, start een container, en toont een korte uitleg in de terminal.
 
 
-4) Belangrijkste commando’s (cheatsheet)
+---
 
-docker pull <image:tag>     # image downloaden
-docker images               # alle images op je pc
-docker run <image>          # start een container
-docker ps                   # draaiende containers
-docker ps -a                # alle containers (ook gestopte)
-docker stop <naam/id>       # container stoppen
-docker rm <naam/id>         # container verwijderen
-docker rmi <image-id>       # image verwijderen
+🧾 Belangrijkste Commando’s
 
-5) Praktijk: een kleine website draaien
+Commando	Uitleg
+```bash
+docker pull <image:tag>	Download een image
+docker images	Toon alle images
+docker run <image>	Start een container
+docker ps	Toon draaiende containers
+docker ps -a	Toon ook gestopte containers
+docker stop <naam/id>	Stop een container
+docker rm <naam/id>	Verwijder een container
+docker rmi <image-id>	Verwijder een image
+```
 
-We gebruiken de officiële nginx webserver.
 
+---
+
+🌐 Een Kleine Website Draaien
+
+We gebruiken nginx, een kleine webserver.
+```bash
 docker pull nginx:alpine
 docker run -d -p 8080:80 --name mijnsite nginx:alpine
 
-Open je browser: http://localhost:8080
+Open je browser en ga naar: http://localhost:8080
 
 Stoppen:
 
-
 docker stop mijnsite
 docker rm mijnsite
+```
 
-6) Zelf een image bouwen (met Dockerfile)
+---
 
-We maken een piepkleine website.
+🏗️ Zelf een Image Bouwen
 
-1. Maak een map, bv. mijn-website/, met twee bestanden:
-
-
+Maak een map, bijvoorbeeld mijn-website/, met deze bestanden:
 
 index.html
 
@@ -75,56 +90,69 @@ FROM nginx:alpine
 # Kopieer onze website naar de standaard map van nginx
 COPY index.html /usr/share/nginx/html/index.html
 
-2. Bouw de image:
-
-
+Bouw en start de container:
 
 docker build -t mijn-website:1.0 .
-
-3. Start een container:
-
-
-
 docker run -d -p 8080:80 --name site mijn-website:1.0
 
-4. Check in je browser: http://localhost:8080
+Check in je browser: http://localhost:8080
 
 
-5. Stop/verwijder:
+---
+
+⚠️ Veelgemaakte Fouten
+
+Probleem	Oplossing
+
+Poort al in gebruik	Gebruik een andere poort: -p 8081:80
+“permission denied” bij build	Zorg dat je in de juiste map staat (cd)
+Container stopt meteen	Bekijk logs: docker logs <containernaam>
 
 
 
-docker stop site
-docker rm site
+---
 
-7) Veelgemaakte fouten (en fixes)
+🧩 Mini-opdrachten
 
-Poort al in gebruik → kies andere poort: -p 8081:80
-
-“permission denied” bij build → zorg dat je in de juiste map staat (cd) en dat Dockerfile zo heet (zonder extensie).
-
-Container start en stopt meteen → check logs:
-
-docker logs <containernaam>
+1. Start nginx:alpine op poort 8090.
 
 
-8) Mini-opdrachten (voor in de les)
-
-1. Start nginx:alpine op poort 8090 i.p.v. 8080.
-
-
-2. Pas je index.html aan (andere tekst) en bouw mijn-website:1.1. Start ’m.
+2. Pas je index.html aan en bouw mijn-website:1.1.
 
 
 3. Laat met docker images zien dat je 1.0 en 1.1 hebt. Verwijder 1.0.
 
 
-4. Zoek zelf een officiële image (tip: alpine, python, node) en start ’m.
+4. Zoek een officiële image (bijv. alpine, python, node) en start ’m.
 
 
 
-9) Veilig werken
 
-Gebruik bij voorkeur officiële images (van “library” of bekende uitgevers).
+---
 
-Lees altijd even de beschrijving van de image (welke poorten, welke commando’s).
+🔒 Veilig Werken
+
+Gebruik alleen officiële images (van Docker Hub).
+
+Lees altijd even de beschrijving: poorten, volumes, commando’s, enz.
+
+
+
+---
+
+🧠 Samenvatting
+
+Docker = software in een container, gebouwd van een image,
+die overal hetzelfde werkt — superhandig voor ontwikkelaars en studenten!
+
+
+---
+
+👨‍🏫 Gemaakt voor MBO-1 studenten om stap-voor-stap Docker te leren begrijpen.
+
+---
+
+Wil je dat ik er ook een klein **GitHub-stijl badge-header** (zoals `![Docker](...)`) en een **“Next Steps”** sectie aan toevoeg, zodat het er nóg professioneler uitziet?
+
+
+
