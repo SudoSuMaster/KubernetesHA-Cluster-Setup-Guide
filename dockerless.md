@@ -1,6 +1,6 @@
 ---
 
-# 🐳 Docker Images Guide (voor MBO-1 studenten)
+# 🐳 Docker Images Guide
 
 Een super simpele uitleg over **Docker**, **images** en **containers** — met voorbeelden die je direct kunt proberen.  
 Ideaal voor de eerste kennismaking met containertechnologie. 🚀
