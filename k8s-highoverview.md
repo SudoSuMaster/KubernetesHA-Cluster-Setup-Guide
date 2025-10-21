@@ -27,9 +27,9 @@ Controller Manager	Controleert of alles nog klopt (desired vs actual).	Controleu
 🌐 Hoe het werkt (stapsgewijs)
 
 Jij geeft een opdracht, bijvoorbeeld:
-
+```bash
 kubectl create deployment hello-app --image=nginx
-
+```
 
 kubectl praat met de API Server → die slaat de opdracht op in etcd (de database).
 
